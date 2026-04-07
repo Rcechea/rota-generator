@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*/__pycache__/
+
+# Virtual environments
+venv/
+.vscode/
+*.pyc
+
+# System / editor files
+.DS_Store
+*.log
+
+# Data that should not go into the image
+data/history.json
+project_summary.txt
+
+# OneDrive / Windows leftovers
+*.tmp
+*/OneDrive*
+*.lnk
+
+# Streamlit cache
+.streamlit/
+
+# Tests (if you don't need them inside container)
+tests/
