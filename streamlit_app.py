@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 import io
 import numpy as np
+import json
 
 from core.history import load_history, save_history, update_history, clear_history
 from core.constraints import apply_sickness_constraints
@@ -25,6 +26,7 @@ st.title("📋 Rota Generator (Streamlit Version)")
 # =============================================================
 st.sidebar.header("People & Areas Editor")
 
+# Initialize defaults
 if "people_list" not in st.session_state:
     st.session_state.people_list = [
         "Sharon Mckeown",
@@ -51,6 +53,7 @@ if "areas_list" not in st.session_state:
         "Third Floor"
     ]
 
+# Text boxes
 people_text = st.sidebar.text_area(
     "People (one per line):",
     value="\n".join(st.session_state.people_list)
@@ -61,6 +64,7 @@ areas_text = st.sidebar.text_area(
     value="\n".join(st.session_state.areas_list)
 )
 
+# Save button
 if st.sidebar.button("Save People & Areas"):
     new_people = [p.strip() for p in people_text.split("\n") if p.strip()]
     new_areas = [a.strip() for a in areas_text.split("\n") if a.strip()]
@@ -73,6 +77,46 @@ if st.sidebar.button("Save People & Areas"):
     ).tolist()
 
     st.sidebar.success("Saved!")
+
+
+# =============================================================
+# ✅ IMPORT / EXPORT (ALWAYS VISIBLE)
+# =============================================================
+st.sidebar.write("---")
+st.sidebar.subheader("Import / Export People & Areas")
+
+# Import JSON
+upload_config = st.sidebar.file_uploader("Import People & Areas (JSON)", type="json")
+
+if upload_config is not None:
+    data = json.load(upload_config)
+
+    if "people" in data and "areas" in data:
+        st.session_state.people_list = data["people"]
+        st.session_state.areas_list = data["areas"]
+
+        st.session_state.allowed_matrix = np.ones(
+            (len(data["areas"]), len(data["people"])), dtype=int
+        ).tolist()
+
+        st.sidebar.success("✅ Imported People & Areas successfully!")
+    else:
+        st.sidebar.error("Invalid JSON format. Must contain 'people' and 'areas'.")
+
+# Export JSON
+export_data = {
+    "people": st.session_state.people_list,
+    "areas": st.session_state.areas_list
+}
+
+export_bytes = json.dumps(export_data, indent=4).encode("utf-8")
+
+st.sidebar.download_button(
+    label="Download People & Areas",
+    data=export_bytes,
+    file_name="people_areas.json",
+    mime="application/json"
+)
 
 
 # =============================================================
@@ -111,7 +155,7 @@ st.session_state.allowed_matrix = matrix
 
 
 # =============================================================
-# ✅ SIDEBAR: Inputs & Buttons
+# ✅ SIDEBAR: Input Buttons
 # =============================================================
 st.sidebar.header("Input Settings")
 
@@ -133,8 +177,8 @@ clear_btn = st.sidebar.button("Clear History")
 # ✅ LOG AREA
 # =============================================================
 log = st.empty()
-def log_write(m):
-    log.write(m)
+def log_write(msg):
+    log.write(msg)
 
 
 # =============================================================
@@ -158,25 +202,23 @@ if regen_btn:
 
         st.write("## Debug Review From History")
 
-        # Convert assignments from names to indices
         hist_assign = []
         for m in history.get("months", []):
             mapping = m["assignment"]
-            month_assignment = []
+            assignment = []
             for p in people:
                 area_name = mapping.get(p)
                 if area_name == "Sick":
-                    month_assignment.append(None)
+                    assignment.append(None)
                 elif area_name in areas:
-                    month_assignment.append(areas.index(area_name))
+                    assignment.append(areas.index(area_name))
                 else:
-                    month_assignment.append(None)
-            hist_assign.append(month_assignment)
+                    assignment.append(None)
+            hist_assign.append(assignment)
 
-        # Display & export
-        for i, assignment in enumerate(hist_assign):
+        for i, asg in enumerate(hist_assign):
             df, styled = build_debug_dataframe(
-                people, areas, allowed, assignment, hist_assign[:i]
+                people, areas, allowed, asg, hist_assign[:i]
             )
             st.write(f"### Month {i+1}")
             st.dataframe(styled, height=600)
@@ -187,19 +229,19 @@ if regen_btn:
                 people,
                 areas,
                 allowed_matrix=allowed,
-                assignment=assignment,
+                assignment=asg,
                 history_assignments=hist_assign[:i]
             )
             buf.seek(0)
 
             st.download_button(
-                label=f"Download Debug {i+1}",
-                data=buf,
-                file_name=f"debug_history_month_{i+1}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                f"Download Debug {i+1}",
+                buf,
+                f"debug_history_month_{i+1}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-        st.success("✅ Rebuilt all debug files!")
+        st.success("✅ Debug regenerated!")
 
     except Exception as e:
         st.error(str(e))
@@ -207,7 +249,7 @@ if regen_btn:
 
 
 # =============================================================
-# ✅ RUN ROTATION — Sick‑Safe Version
+# ✅ RUN ROTATION (Sick‑Safe)
 # =============================================================
 if generate_btn:
     try:
@@ -216,41 +258,35 @@ if generate_btn:
         allowed = st.session_state.allowed_matrix
 
         sick_people = [
-            x.strip()
-            for x in sick_people_input.replace("\n", ",").split(",")
-            if x.strip()
+            s.strip()
+            for s in sick_people_input.replace("\n", ",").split(",")
+            if s.strip()
         ]
 
-        # ✅ Full assignment array — sick get None
-        final_assignment = [
-            None if p in sick_people else None
-            for p in people
-        ]
+        final_assignment = [None] * len(people)
 
-        # ✅ Active (non-sick) people
         active_people = [p for p in people if p not in sick_people]
         active_indices = [people.index(p) for p in active_people]
 
-        # Filter matrix for active people
         filtered_allowed = [
             [row[i] for i in active_indices]
             for row in allowed
         ]
 
         history = load_history()
-
         current_assignment = [None] * len(active_people)
 
         st.write("### Download Debug Files")
 
-        for month_step in range(months_to_generate):
-            log_write(f"Processing month {month_step+1}...")
+        for step in range(months_to_generate):
+
+            log_write(f"Processing month {step+1}...")
 
             cost_matrix = build_weighted_cost_matrix(
                 filtered_allowed, active_people, areas, history
             )
 
-            # Solve
+            # Try solvers in order
             try:
                 assignment = solve_optimal(cost_matrix)
             except:
@@ -268,23 +304,19 @@ if generate_btn:
                         filtered_allowed, current_assignment
                     )
 
-            # Map active assignments back to full list
-            for local_idx, person_idx in enumerate(active_indices):
-                final_assignment[person_idx] = assignment[local_idx]
+            # Map to full assignment
+            for loc, real_idx in enumerate(active_indices):
+                final_assignment[real_idx] = assignment[loc]
 
-            # Export debug
             buf = io.BytesIO()
             export_debug_matrix(
-                buf,
-                people,
-                areas,
+                buf, people, areas,
                 allowed_matrix=allowed,
                 assignment=final_assignment,
                 history_assignments=[
                     [
-                        (areas.index(area_name)
-                         if area_name in areas else None)
-                        for area_name in m["assignment"].values()
+                        areas.index(a) if a in areas else None
+                        for a in m["assignment"].values()
                     ]
                     for m in history.get("months", [])
                 ]
@@ -292,13 +324,12 @@ if generate_btn:
             buf.seek(0)
 
             st.download_button(
-                label=f"Download Debug Month {month_step+1}",
-                data=buf,
-                file_name=f"rota_debug_{month_step+1}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                f"Download Debug Month {step+1}",
+                buf,
+                f"rota_debug_{step+1}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-            # Save history (we pass 'Sick' for sick people)
             update_history(history, final_assignment, people, areas)
             save_history(history)
 
