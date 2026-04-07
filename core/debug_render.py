@@ -58,5 +58,5 @@ def build_debug_dataframe(people, areas, allowed_matrix, assignment, history_ass
             return f"background-color: {RECENCY_COLORS[idx]};"
         return ""  # unused
 
-    styled = df.style.applymap(colorize)
+    styled = df.style.map(colorize)
     return df, styled
