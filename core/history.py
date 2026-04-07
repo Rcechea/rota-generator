@@ -34,15 +34,24 @@ import os
 # ------------------------------------------------------------
 
 def load_history(path="data/history.json"):
-    """Load rotation history from JSON. Create empty if missing."""
+    # If history does not exist -> create it from template or return empty
     if not os.path.exists(path):
+        template = "data/history-template.json"
+        if os.path.exists(template):
+            import shutil
+            shutil.copy(template, path)
+            # After copying, load the template contents
+            with open(path, "r") as f:
+                return json.load(f)
+        # No template → return empty structure
         return {"months": []}
 
+    # If file *does* exist → load normally
     try:
         with open(path, "r") as f:
             return json.load(f)
     except:
-        # If file corrupt, reset history
+        # If file is corrupt → reset it but keep app running
         return {"months": []}
 
 
