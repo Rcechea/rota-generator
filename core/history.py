@@ -57,24 +57,24 @@ def clear_history(path="data/history.json"):
 # ------------------------------------------------------------
 # UPDATING HISTORY
 # ------------------------------------------------------------
+
 def update_history(history, assignment, people, areas):
     """
-    Add a completed month's assignment to history.
-    assignment: list where index=person_idx, value=area_idx
+    Sick people have assignment = None.
+    We store them as "Sick" in history.
     """
-
-    # Build person → area mapping
     mapping = {}
     for i in range(len(people)):
         person = people[i]
-        area = areas[assignment[i]]
-        # Clean any BOM
-        area = area.replace("\ufeff", "").replace("ï»¿", "")
-        mapping[person] = area
+        area_idx = assignment[i]
+
+        if area_idx is None:
+            mapping[person] = "Sick"
+        else:
+            mapping[person] = areas[area_idx]
 
     month_entry = {
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "assignment": mapping
     }
-
     history["months"].append(month_entry)

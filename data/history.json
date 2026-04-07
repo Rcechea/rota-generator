@@ -1,11 +1,25 @@
 {
     "months": [
         {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 08:59:44",
             "assignment": {
-                "Sharon Mckeown": "Receiving/Racking",
-                "Hetal Bari": "Yard/Car Park",
-                "Dorota Szyca": "Canteen",
+                "Sharon Mckeown": "Sick",
+                "Hetal Bari": "Receiving/Racking",
+                "Dorota Szyca": "Yard/Car Park",
+                "Jagoda Ndreca": "Canteen",
+                "Laszlo Hevesi": "HR Office",
+                "Inbound vacancy": "Ground Floor",
+                "Zuzana Korpova": "First Floor",
+                "Marius Gutae": "Second Floor A",
+                "Cristina Zamfira": "Second Floor B"
+            }
+        },
+        {
+            "timestamp": "2026-04-07 09:00:10",
+            "assignment": {
+                "Sharon Mckeown": "Yard/Car Park",
+                "Hetal Bari": "Canteen",
+                "Dorota Szyca": "Receiving/Racking",
                 "Jagoda Ndreca": "HR Office",
                 "Laszlo Hevesi": "Ground Floor",
                 "Inbound vacancy": "First Floor",
@@ -15,325 +29,31 @@
             }
         },
         {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 09:00:28",
             "assignment": {
-                "Sharon Mckeown": "Yard/Car Park",
-                "Hetal Bari": "Receiving/Racking",
-                "Dorota Szyca": "HR Office",
-                "Jagoda Ndreca": "Canteen",
-                "Laszlo Hevesi": "Second Floor A",
-                "Inbound vacancy": "Ground Floor",
-                "Zuzana Korpova": "First Floor",
-                "Marius Gutae": "Third Floor",
-                "Cristina Zamfira": "Second Floor B"
+                "Sharon Mckeown": "Sick",
+                "Hetal Bari": "Yard/Car Park",
+                "Dorota Szyca": "Canteen",
+                "Jagoda Ndreca": "Receiving/Racking",
+                "Laszlo Hevesi": "First Floor",
+                "Inbound vacancy": "HR Office",
+                "Zuzana Korpova": "Second Floor B",
+                "Marius Gutae": "Ground Floor",
+                "Cristina Zamfira": "Second Floor A"
             }
         },
         {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 09:00:52",
             "assignment": {
                 "Sharon Mckeown": "Second Floor B",
                 "Hetal Bari": "HR Office",
-                "Dorota Szyca": "Receiving/Racking",
-                "Jagoda Ndreca": "Ground Floor",
-                "Laszlo Hevesi": "Yard/Car Park",
-                "Inbound vacancy": "Second Floor A",
-                "Zuzana Korpova": "Third Floor",
-                "Marius Gutae": "First Floor",
-                "Cristina Zamfira": "Canteen"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Canteen",
-                "Hetal Bari": "Ground Floor",
-                "Dorota Szyca": "Yard/Car Park",
-                "Jagoda Ndreca": "Receiving/Racking",
-                "Laszlo Hevesi": "HR Office",
-                "Inbound vacancy": "Third Floor",
-                "Zuzana Korpova": "Second Floor B",
-                "Marius Gutae": "Second Floor A",
-                "Cristina Zamfira": "First Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "HR Office",
-                "Hetal Bari": "Canteen",
                 "Dorota Szyca": "Ground Floor",
-                "Jagoda Ndreca": "First Floor",
-                "Laszlo Hevesi": "Third Floor",
-                "Inbound vacancy": "Second Floor B",
-                "Zuzana Korpova": "Yard/Car Park",
-                "Marius Gutae": "Receiving/Racking",
-                "Cristina Zamfira": "Second Floor A"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Ground Floor",
-                "Hetal Bari": "First Floor",
-                "Dorota Szyca": "Third Floor",
-                "Jagoda Ndreca": "Second Floor A",
-                "Laszlo Hevesi": "Second Floor B",
-                "Inbound vacancy": "HR Office",
-                "Zuzana Korpova": "Canteen",
-                "Marius Gutae": "Yard/Car Park",
-                "Cristina Zamfira": "Receiving/Racking"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "First Floor",
-                "Hetal Bari": "Second Floor A",
-                "Dorota Szyca": "Second Floor B",
-                "Jagoda Ndreca": "Third Floor",
-                "Laszlo Hevesi": "Canteen",
-                "Inbound vacancy": "Ground Floor",
-                "Zuzana Korpova": "Receiving/Racking",
-                "Marius Gutae": "HR Office",
-                "Cristina Zamfira": "Yard/Car Park"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Receiving/Racking",
-                "Hetal Bari": "Second Floor B",
-                "Dorota Szyca": "First Floor",
                 "Jagoda Ndreca": "Yard/Car Park",
-                "Laszlo Hevesi": "Ground Floor",
-                "Inbound vacancy": "Second Floor A",
-                "Zuzana Korpova": "HR Office",
-                "Marius Gutae": "Canteen",
-                "Cristina Zamfira": "Third Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Second Floor A",
-                "Hetal Bari": "Yard/Car Park",
-                "Dorota Szyca": "Canteen",
-                "Jagoda Ndreca": "Ground Floor",
                 "Laszlo Hevesi": "Receiving/Racking",
-                "Inbound vacancy": "First Floor",
-                "Zuzana Korpova": "Third Floor",
-                "Marius Gutae": "Second Floor B",
-                "Cristina Zamfira": "HR Office"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Yard/Car Park",
-                "Hetal Bari": "Ground Floor",
-                "Dorota Szyca": "HR Office",
-                "Jagoda Ndreca": "Receiving/Racking",
-                "Laszlo Hevesi": "Second Floor A",
-                "Inbound vacancy": "Third Floor",
-                "Zuzana Korpova": "Second Floor B",
-                "Marius Gutae": "First Floor",
-                "Cristina Zamfira": "Canteen"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Canteen",
-                "Hetal Bari": "Receiving/Racking",
-                "Dorota Szyca": "Ground Floor",
-                "Jagoda Ndreca": "HR Office",
-                "Laszlo Hevesi": "Yard/Car Park",
-                "Inbound vacancy": "Second Floor B",
-                "Zuzana Korpova": "First Floor",
+                "Inbound vacancy": "Second Floor A",
+                "Zuzana Korpova": "Canteen",
                 "Marius Gutae": "Third Floor",
-                "Cristina Zamfira": "Second Floor A"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Ground Floor",
-                "Hetal Bari": "Canteen",
-                "Dorota Szyca": "Receiving/Racking",
-                "Jagoda Ndreca": "First Floor",
-                "Laszlo Hevesi": "Third Floor",
-                "Inbound vacancy": "HR Office",
-                "Zuzana Korpova": "Yard/Car Park",
-                "Marius Gutae": "Second Floor A",
-                "Cristina Zamfira": "Second Floor B"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "HR Office",
-                "Hetal Bari": "Second Floor A",
-                "Dorota Szyca": "Yard/Car Park",
-                "Jagoda Ndreca": "Third Floor",
-                "Laszlo Hevesi": "Second Floor B",
-                "Inbound vacancy": "Ground Floor",
-                "Zuzana Korpova": "Canteen",
-                "Marius Gutae": "Receiving/Racking",
                 "Cristina Zamfira": "First Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "First Floor",
-                "Hetal Bari": "Second Floor B",
-                "Dorota Szyca": "Third Floor",
-                "Jagoda Ndreca": "Yard/Car Park",
-                "Laszlo Hevesi": "Ground Floor",
-                "Inbound vacancy": "Second Floor A",
-                "Zuzana Korpova": "HR Office",
-                "Marius Gutae": "Canteen",
-                "Cristina Zamfira": "Receiving/Racking"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Second Floor A",
-                "Hetal Bari": "First Floor",
-                "Dorota Szyca": "Second Floor B",
-                "Jagoda Ndreca": "Ground Floor",
-                "Laszlo Hevesi": "Canteen",
-                "Inbound vacancy": "Third Floor",
-                "Zuzana Korpova": "Receiving/Racking",
-                "Marius Gutae": "Yard/Car Park",
-                "Cristina Zamfira": "HR Office"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Second Floor B",
-                "Hetal Bari": "Ground Floor",
-                "Dorota Szyca": "Canteen",
-                "Jagoda Ndreca": "Second Floor A",
-                "Laszlo Hevesi": "Receiving/Racking",
-                "Inbound vacancy": "First Floor",
-                "Zuzana Korpova": "Third Floor",
-                "Marius Gutae": "HR Office",
-                "Cristina Zamfira": "Yard/Car Park"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Receiving/Racking",
-                "Hetal Bari": "Yard/Car Park",
-                "Dorota Szyca": "Ground Floor",
-                "Jagoda Ndreca": "Canteen",
-                "Laszlo Hevesi": "HR Office",
-                "Inbound vacancy": "Second Floor B",
-                "Zuzana Korpova": "Second Floor A",
-                "Marius Gutae": "First Floor",
-                "Cristina Zamfira": "Third Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Ground Floor",
-                "Hetal Bari": "Canteen",
-                "Dorota Szyca": "First Floor",
-                "Jagoda Ndreca": "Receiving/Racking",
-                "Laszlo Hevesi": "Yard/Car Park",
-                "Inbound vacancy": "HR Office",
-                "Zuzana Korpova": "Second Floor B",
-                "Marius Gutae": "Third Floor",
-                "Cristina Zamfira": "Second Floor A"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Yard/Car Park",
-                "Hetal Bari": "HR Office",
-                "Dorota Szyca": "Receiving/Racking",
-                "Jagoda Ndreca": "First Floor",
-                "Laszlo Hevesi": "Third Floor",
-                "Inbound vacancy": "Ground Floor",
-                "Zuzana Korpova": "Canteen",
-                "Marius Gutae": "Second Floor A",
-                "Cristina Zamfira": "Second Floor B"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Canteen",
-                "Hetal Bari": "Receiving/Racking",
-                "Dorota Szyca": "Yard/Car Park",
-                "Jagoda Ndreca": "Third Floor",
-                "Laszlo Hevesi": "Ground Floor",
-                "Inbound vacancy": "Second Floor A",
-                "Zuzana Korpova": "HR Office",
-                "Marius Gutae": "Second Floor B",
-                "Cristina Zamfira": "First Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "HR Office",
-                "Hetal Bari": "First Floor",
-                "Dorota Szyca": "Second Floor B",
-                "Jagoda Ndreca": "Ground Floor",
-                "Laszlo Hevesi": "Second Floor A",
-                "Inbound vacancy": "Third Floor",
-                "Zuzana Korpova": "Receiving/Racking",
-                "Marius Gutae": "Yard/Car Park",
-                "Cristina Zamfira": "Canteen"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Second Floor B",
-                "Hetal Bari": "Ground Floor",
-                "Dorota Szyca": "Third Floor",
-                "Jagoda Ndreca": "Second Floor A",
-                "Laszlo Hevesi": "Receiving/Racking",
-                "Inbound vacancy": "First Floor",
-                "Zuzana Korpova": "Yard/Car Park",
-                "Marius Gutae": "Canteen",
-                "Cristina Zamfira": "HR Office"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "First Floor",
-                "Hetal Bari": "Second Floor A",
-                "Dorota Szyca": "Ground Floor",
-                "Jagoda Ndreca": "Yard/Car Park",
-                "Laszlo Hevesi": "Canteen",
-                "Inbound vacancy": "Second Floor B",
-                "Zuzana Korpova": "Third Floor",
-                "Marius Gutae": "HR Office",
-                "Cristina Zamfira": "Receiving/Racking"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:20:24",
-            "assignment": {
-                "Sharon Mckeown": "Ground Floor",
-                "Hetal Bari": "Second Floor B",
-                "Dorota Szyca": "First Floor",
-                "Jagoda Ndreca": "Canteen",
-                "Laszlo Hevesi": "Third Floor",
-                "Inbound vacancy": "HR Office",
-                "Zuzana Korpova": "Second Floor A",
-                "Marius Gutae": "Receiving/Racking",
-                "Cristina Zamfira": "Yard/Car Park"
             }
         }
     ]

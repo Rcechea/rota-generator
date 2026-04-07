@@ -74,23 +74,15 @@ def export_debug_matrix(
                     past_age = i + 1
                     break
 
-            # THIS MONTH assignment
-            if assignment[person_idx] == area_idx:
 
-                if past_age is None:
-                    # brand new assignment
-                    cell.value = "✓"
-                    cell.fill = YELLOW
-
-                else:
-                    # selected again after X months
-                    idx = min(past_age - 1, len(RECENCY_COLORS) - 1)
-                    color = RECENCY_COLORS[idx]
-                    cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-                    cell.value = f"✓ ({past_age})"
-
-                cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # SICK: assignment = None
+            if assignment[person_idx] is None:
+                cell.value = "SICK"
+                cell.fill = PatternFill(start_color="FFFF99", end_color="FFFF99",
+                                        fill_type="solid")  # light yellow
                 continue
+                
 
             # PAST assignment (not current)
             if past_age is not None:
