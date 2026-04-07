@@ -1,3 +1,15 @@
+### FILE: .\config.json
+```
+{
+    "allowed": "C:/Users/razvan.cechea/OneDrive - Bleckmann Belgi\u00eb nv/Documenten/Scripts/Rota_project/data/allowed_matrix.csv",
+    "people": "C:/Users/razvan.cechea/OneDrive - Bleckmann Belgi\u00eb nv/Documenten/Scripts/Rota_project/data/people.csv",
+    "areas": "C:/Users/razvan.cechea/OneDrive - Bleckmann Belgi\u00eb nv/Documenten/Scripts/Rota_project/data/areas.csv",
+    "lastmonth": "C:/Users/razvan.cechea/OneDrive - Bleckmann Belgi\u00eb nv/Documenten/Scripts/Rota_project/data/last_month.csv"
+}
+```
+
+### FILE: .\project_summary.txt
+```
 ### FILE: .\app.py
 ```
 import streamlit as st
@@ -458,94 +470,361 @@ def launch_gui():
                     )
 
                     # ========================================================
-                    # 1️⃣ PRIMARY: OPTIMAL SOLVER
-                    # ========================================================
-                    log(window, "Trying optimal solver...")
-                    try:
-                        assignment = solve_optimal(cost_matrix)
-                        log(window, "Optimal solver succeeded.")
+                   
+```
 
-                    except Exception as e_opt:
-                        log(window, f"Optimal solver failed: {e_opt}")
-                        log(window, "Trying Weighted Greedy...")
+### FILE: .\requirements.txt
+```
+streamlit
+pandas
+numpy
+scipy
+openpyxl
+```
 
-                        # ====================================================
-                        # 2️⃣ FALLBACK: WEIGHTED GREEDY
-                        # ====================================================
-                        try:
-                            assignment = greedy_assign(
-                                constrained_matrix,
-                                current_assignment,
-                                people,
-                                areas,
-                                cost_matrix,
-                                debug_log=lambda m: log(window, m)
-                            )
-                            log(window, "Greedy solver succeeded.")
+### FILE: .\streamlit_app.py
+```
+import streamlit as st
+import datetime
+import io
+import numpy as np
+import json
 
-                        except Exception as e_greedy:
-                            log(window, f"Greedy failed: {e_greedy}")
-                            log(window, "Trying Backtracking...")
-
-                            # ====================================================
-                            # 3️⃣ FINAL FALLBACK: BACKTRACKING
-                            # ====================================================
-                            assignment = solve_with_backtracking(
-                                constrained_matrix,
-                                current_assignment
-                            )
-                            log(window, "Backtracking succeeded.")
-
-                    # Export
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    csv_path = f"rota_{month_step+1}_{timestamp}.csv"
-                    excel_path = f"rota_{month_step+1}_{timestamp}.xlsx"
+from core.history import load_history, save_history, update_history, clear_history
+from core.constraints import apply_sickness_constraints
+from core.greedy import greedy_assign
+from core.backtracking import solve_with_backtracking
+from core.optimal import solve_optimal
+from core.weights import build_weighted_cost_matrix
+from core.debug_export import export_debug_matrix
+from core.debug_render import build_debug_dataframe
 
 
-                    # Debug matrix export
-                    debug_path = f"rota_debug_{month_step+1}_{timestamp}.xlsx"
-                    history_assignments_list = [m["assignment"] for m in history.get("months", [])]
+# -------------------------------------------------------------
+# PAGE CONFIG
+# -------------------------------------------------------------
+st.set_page_config(page_title="Rota Generator", layout="wide")
+st.title("📋 Rota Generator (Streamlit Version)")
 
-                    export_debug_matrix(
-                        debug_path,
-                        people=people,
-                        areas=areas,
-                        allowed_matrix=constrained_matrix,
-                        assignment=assignment,
-                        history_assignments=[
-                            [areas.index(area_name) for _, area_name in month.get("assignment", {}).items()]
-                            for month in history.get("months", [])
-                        ]
+
+# =============================================================
+# ✅ PEOPLE & AREAS – FIRST IN SIDEBAR
+# =============================================================
+st.sidebar.header("People & Areas Editor")
+
+# Initialize defaults
+if "people_list" not in st.session_state:
+    st.session_state.people_list = [
+        "Sharon Mckeown",
+        "Hetal Bari",
+        "Dorota Szyca",
+        "Jagoda Ndreca",
+        "Laszlo Hevesi",
+        "Inbound vacancy",
+        "Zuzana Korpova",
+        "Marius Gutae",
+        "Cristina Zamfira"
+    ]
+
+if "areas_list" not in st.session_state:
+    st.session_state.areas_list = [
+        "Receiving/Racking",
+        "Yard/Car Park",
+        "Canteen",
+        "HR Office",
+        "Ground Floor",
+        "First Floor",
+        "Second Floor A",
+        "Second Floor B",
+        "Third Floor"
+    ]
+
+# Text boxes
+people_text = st.sidebar.text_area(
+    "People (one per line):",
+    value="\n".join(st.session_state.people_list)
+)
+
+areas_text = st.sidebar.text_area(
+    "Areas (one per line):",
+    value="\n".join(st.session_state.areas_list)
+)
+
+# Save button
+if st.sidebar.button("Save People & Areas"):
+    new_people = [p.strip() for p in people_text.split("\n") if p.strip()]
+    new_areas = [a.strip() for a in areas_text.split("\n") if a.strip()]
+
+    st.session_state.people_list = new_people
+    st.session_state.areas_list = new_areas
+
+    st.session_state.allowed_matrix = np.ones(
+        (len(new_areas), len(new_people)), dtype=int
+    ).tolist()
+
+    st.sidebar.success("Saved!")
+
+
+# =============================================================
+# ✅ IMPORT / EXPORT (ALWAYS VISIBLE)
+# =============================================================
+st.sidebar.write("---")
+st.sidebar.subheader("Import / Export People & Areas")
+
+# Import JSON
+upload_config = st.sidebar.file_uploader("Import People & Areas (JSON)", type="json")
+
+if upload_config is not None:
+    data = json.load(upload_config)
+
+    if "people" in data and "areas" in data:
+        st.session_state.people_list = data["people"]
+        st.session_state.areas_list = data["areas"]
+
+        st.session_state.allowed_matrix = np.ones(
+            (len(data["areas"]), len(data["people"])), dtype=int
+        ).tolist()
+
+        st.sidebar.success("✅ Imported People & Areas successfully!")
+    else:
+        st.sidebar.error("Invalid JSON format. Must contain 'people' and 'areas'.")
+
+# Export JSON
+export_data = {
+    "people": st.session_state.people_list,
+    "areas": st.session_state.areas_list
+}
+
+export_bytes = json.dumps(export_data, indent=4).encode("utf-8")
+
+st.sidebar.download_button(
+    label="Download People & Areas",
+    data=export_bytes,
+    file_name="people_areas.json",
+    mime="application/json"
+)
+
+
+# =============================================================
+# ✅ ALLOWED MATRIX – INTERACTIVE CHECKBOX GRID
+# =============================================================
+st.write("## Allowed Assignments Matrix")
+
+people = st.session_state.people_list
+areas = st.session_state.areas_list
+
+num_people = len(people)
+num_areas = len(areas)
+
+if "allowed_matrix" not in st.session_state:
+    st.session_state.allowed_matrix = np.ones(
+        (num_areas, num_people), dtype=int
+    ).tolist()
+
+matrix = st.session_state.allowed_matrix
+
+cols = st.columns(num_people + 1)
+cols[0].write("**Area / Person**")
+for idx, p in enumerate(people):
+    cols[idx + 1].write(f"**{p}**")
+
+for a_idx, area in enumerate(areas):
+    row = st.columns(num_people + 1)
+    row[0].write(f"**{area}**")
+    for p_idx, person in enumerate(people):
+        key = f"a{a_idx}_p{p_idx}"
+        val = matrix[a_idx][p_idx] == 1
+        new_val = row[p_idx + 1].checkbox("", value=val, key=key)
+        matrix[a_idx][p_idx] = 1 if new_val else 0
+
+st.session_state.allowed_matrix = matrix
+
+
+# =============================================================
+# ✅ SIDEBAR: Input Buttons
+# =============================================================
+st.sidebar.header("Input Settings")
+
+months_to_generate = st.sidebar.number_input(
+    "Generate next N months", min_value=1, max_value=12, value=1
+)
+
+sick_people_input = st.sidebar.text_area(
+    "Sick / Holiday (comma or newline separated)", ""
+)
+
+st.sidebar.write("---")
+generate_btn = st.sidebar.button("Generate Rota")
+regen_btn = st.sidebar.button("Regenerate Debug From History")
+clear_btn = st.sidebar.button("Clear History")
+
+
+# =============================================================
+# ✅ LOG AREA
+# =============================================================
+log = st.empty()
+def log_write(msg):
+    log.write(msg)
+
+
+# =============================================================
+# ✅ CLEAR HISTORY
+# =============================================================
+if clear_btn:
+    clear_history()
+    st.success("✅ History cleared!")
+    st.stop()
+
+
+# =============================================================
+# ✅ REGENERATE DEBUG FROM HISTORY
+# =============================================================
+if regen_btn:
+    try:
+        people = st.session_state.people_list
+        areas = st.session_state.areas_list
+        allowed = st.session_state.allowed_matrix
+        history = load_history()
+
+        st.write("## Debug Review From History")
+
+        hist_assign = []
+        for m in history.get("months", []):
+            mapping = m["assignment"]
+            assignment = []
+            for p in people:
+                area_name = mapping.get(p)
+                if area_name == "Sick":
+                    assignment.append(None)
+                elif area_name in areas:
+                    assignment.append(areas.index(area_name))
+                else:
+                    assignment.append(None)
+            hist_assign.append(assignment)
+
+        for i, asg in enumerate(hist_assign):
+            df, styled = build_debug_dataframe(
+                people, areas, allowed, asg, hist_assign[:i]
+            )
+            st.write(f"### Month {i+1}")
+            st.dataframe(styled, height=600)
+
+            buf = io.BytesIO()
+            export_debug_matrix(
+                buf,
+                people,
+                areas,
+                allowed_matrix=allowed,
+                assignment=asg,
+                history_assignments=hist_assign[:i]
+            )
+            buf.seek(0)
+
+            st.download_button(
+                f"Download Debug {i+1}",
+                buf,
+                f"debug_history_month_{i+1}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+        st.success("✅ Debug regenerated!")
+
+    except Exception as e:
+        st.error(str(e))
+        st.stop()
+
+
+# =============================================================
+# ✅ RUN ROTATION (Sick‑Safe)
+# =============================================================
+if generate_btn:
+    try:
+        people = st.session_state.people_list
+        areas = st.session_state.areas_list
+        allowed = st.session_state.allowed_matrix
+
+        sick_people = [
+            s.strip()
+            for s in sick_people_input.replace("\n", ",").split(",")
+            if s.strip()
+        ]
+
+        final_assignment = [None] * len(people)
+
+        active_people = [p for p in people if p not in sick_people]
+        active_indices = [people.index(p) for p in active_people]
+
+        filtered_allowed = [
+            [row[i] for i in active_indices]
+            for row in allowed
+        ]
+
+        history = load_history()
+        current_assignment = [None] * len(active_people)
+
+        st.write("### Download Debug Files")
+
+        for step in range(months_to_generate):
+
+            log_write(f"Processing month {step+1}...")
+
+            cost_matrix = build_weighted_cost_matrix(
+                filtered_allowed, active_people, areas, history
+            )
+
+            # Try solvers in order
+            try:
+                assignment = solve_optimal(cost_matrix)
+            except:
+                try:
+                    assignment = greedy_assign(
+                        filtered_allowed,
+                        current_assignment,
+                        active_people,
+                        areas,
+                        cost_matrix,
+                        debug_log=log_write
+                    )
+                except:
+                    assignment = solve_with_backtracking(
+                        filtered_allowed, current_assignment
                     )
 
-                    log(window, f"Exported Debug Matrix: {debug_path}")
+            # Map to full assignment
+            for loc, real_idx in enumerate(active_indices):
+                final_assignment[real_idx] = assignment[loc]
 
-                    # Update history
-                    update_history(history, assignment, people, areas)
-                    save_history(history)
+            buf = io.BytesIO()
+            export_debug_matrix(
+                buf, people, areas,
+                allowed_matrix=allowed,
+                assignment=final_assignment,
+                history_assignments=[
+                    [
+                        areas.index(a) if a in areas else None
+                        for a in m["assignment"].values()
+                    ]
+                    for m in history.get("months", [])
+                ]
+            )
+            buf.seek(0)
 
-                    current_assignment = assignment
+            st.download_button(
+                f"Download Debug Month {step+1}",
+                buf,
+                f"rota_debug_{step+1}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
-                log(window, "\nRota generation complete!")
+            update_history(history, final_assignment, people, areas)
+            save_history(history)
 
-            except Exception as e:
-                log(window, f"ERROR: {str(e)}")
+            current_assignment = assignment
 
-    window.close()
-```
+        st.success("✅ Rota generation complete!")
 
-### FILE: .\main.py
-```
-# main.py
-"""
-Entry point for the rota solver application.
-Starts the PySimpleGUI interface.
-"""
-
-from gui import launch_gui
-
-if __name__ == "__main__":
-    launch_gui()
+    except Exception as e:
+        st.error(f"❌ ERROR: {e}")
 ```
 
 ### FILE: .\core\backtracking.py
@@ -805,23 +1084,15 @@ def export_debug_matrix(
                     past_age = i + 1
                     break
 
-            # THIS MONTH assignment
-            if assignment[person_idx] == area_idx:
 
-                if past_age is None:
-                    # brand new assignment
-                    cell.value = "✓"
-                    cell.fill = YELLOW
-
-                else:
-                    # selected again after X months
-                    idx = min(past_age - 1, len(RECENCY_COLORS) - 1)
-                    color = RECENCY_COLORS[idx]
-                    cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-                    cell.value = f"✓ ({past_age})"
-
-                cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # SICK: assignment = None
+            if assignment[person_idx] is None:
+                cell.value = "SICK"
+                cell.fill = PatternFill(start_color="FFFF99", end_color="FFFF99",
+                                        fill_type="solid")  # light yellow
                 continue
+                
 
             # PAST assignment (not current)
             if past_age is not None:
@@ -1106,27 +1377,28 @@ def clear_history(path="data/history.json"):
 # ------------------------------------------------------------
 # UPDATING HISTORY
 # ------------------------------------------------------------
+
 def update_history(history, assignment, people, areas):
     """
-    Add a completed month's assignment to history.
-    assignment: list where index=person_idx, value=area_idx
+    Sick people have assignment = None.
+    We store them as "Sick" in history.
     """
-
-    # Build person → area mapping
     mapping = {}
     for i in range(len(people)):
         person = people[i]
-        area = areas[assignment[i]]
-        # Clean any BOM
-        area = area.replace("\ufeff", "").replace("ï»¿", "")
-        mapping[person] = area
+        area_idx = assignment[i]
+
+        if area_idx is None:
+            mapping[person] = "Sick"
+        else:
+            mapping[person] = areas[area_idx]
 
     month_entry = {
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "assignment": mapping
     }
-
     history["months"].append(month_entry)
+
 ```
 
 ### FILE: .\core\io.py
@@ -1411,9 +1683,9 @@ def build_weighted_cost_matrix(allowed_matrix, people, areas, history):
 {
     "months": [
         {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 09:23:01",
             "assignment": {
-                "Sharon Mckeown": "Receiving/Racking",
+                "Sharin": "Receiving/Racking",
                 "Hetal Bari": "Yard/Car Park",
                 "Dorota Szyca": "Canteen",
                 "Jagoda Ndreca": "HR Office",
@@ -1425,180 +1697,63 @@ def build_weighted_cost_matrix(allowed_matrix, people, areas, history):
             }
         },
         {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 09:23:01",
             "assignment": {
-                "Sharon Mckeown": "Yard/Car Park",
+                "Sharin": "Yard/Car Park",
                 "Hetal Bari": "Receiving/Racking",
                 "Dorota Szyca": "HR Office",
                 "Jagoda Ndreca": "Canteen",
-                "Laszlo Hevesi": "Second Floor A",
+                "Laszlo Hevesi": "First Floor",
                 "Inbound vacancy": "Ground Floor",
-                "Zuzana Korpova": "First Floor",
+                "Zuzana Korpova": "Second Floor B",
                 "Marius Gutae": "Third Floor",
-                "Cristina Zamfira": "Second Floor B"
+                "Cristina Zamfira": "Second Floor A"
             }
         },
         {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 09:23:01",
             "assignment": {
-                "Sharon Mckeown": "Second Floor B",
+                "Sharin": "Canteen",
                 "Hetal Bari": "HR Office",
                 "Dorota Szyca": "Receiving/Racking",
-                "Jagoda Ndreca": "Ground Floor",
-                "Laszlo Hevesi": "Yard/Car Park",
-                "Inbound vacancy": "Second Floor A",
+                "Jagoda Ndreca": "Yard/Car Park",
+                "Laszlo Hevesi": "Second Floor A",
+                "Inbound vacancy": "Second Floor B",
                 "Zuzana Korpova": "Third Floor",
                 "Marius Gutae": "First Floor",
-                "Cristina Zamfira": "Canteen"
+                "Cristina Zamfira": "Ground Floor"
             }
         },
         {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Canteen",
-                "Hetal Bari": "Ground Floor",
-                "Dorota Szyca": "Yard/Car Park",
-                "Jagoda Ndreca": "Receiving/Racking",
-                "Laszlo Hevesi": "HR Office",
-                "Inbound vacancy": "Third Floor",
-                "Zuzana Korpova": "Second Floor B",
-                "Marius Gutae": "Second Floor A",
-                "Cristina Zamfira": "First Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "HR Office",
-                "Hetal Bari": "Canteen",
-                "Dorota Szyca": "Ground Floor",
-                "Jagoda Ndreca": "First Floor",
-                "Laszlo Hevesi": "Third Floor",
-                "Inbound vacancy": "Second Floor B",
-                "Zuzana Korpova": "Yard/Car Park",
-                "Marius Gutae": "Receiving/Racking",
-                "Cristina Zamfira": "Second Floor A"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Ground Floor",
-                "Hetal Bari": "First Floor",
-                "Dorota Szyca": "Third Floor",
-                "Jagoda Ndreca": "Second Floor A",
-                "Laszlo Hevesi": "Second Floor B",
-                "Inbound vacancy": "HR Office",
-                "Zuzana Korpova": "Canteen",
-                "Marius Gutae": "Yard/Car Park",
-                "Cristina Zamfira": "Receiving/Racking"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "First Floor",
-                "Hetal Bari": "Second Floor A",
-                "Dorota Szyca": "Second Floor B",
-                "Jagoda Ndreca": "Third Floor",
-                "Laszlo Hevesi": "Canteen",
-                "Inbound vacancy": "Ground Floor",
-                "Zuzana Korpova": "Receiving/Racking",
-                "Marius Gutae": "HR Office",
-                "Cristina Zamfira": "Yard/Car Park"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
+            "timestamp": "2026-04-07 09:41:31",
             "assignment": {
                 "Sharon Mckeown": "Receiving/Racking",
-                "Hetal Bari": "Second Floor B",
-                "Dorota Szyca": "First Floor",
-                "Jagoda Ndreca": "Yard/Car Park",
-                "Laszlo Hevesi": "Ground Floor",
-                "Inbound vacancy": "Second Floor A",
-                "Zuzana Korpova": "HR Office",
-                "Marius Gutae": "Canteen",
-                "Cristina Zamfira": "Third Floor"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Second Floor A",
-                "Hetal Bari": "Yard/Car Park",
-                "Dorota Szyca": "Canteen",
-                "Jagoda Ndreca": "Ground Floor",
-                "Laszlo Hevesi": "Receiving/Racking",
-                "Inbound vacancy": "First Floor",
-                "Zuzana Korpova": "Third Floor",
-                "Marius Gutae": "Second Floor B",
-                "Cristina Zamfira": "HR Office"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Yard/Car Park",
-                "Hetal Bari": "Ground Floor",
-                "Dorota Szyca": "HR Office",
-                "Jagoda Ndreca": "Receiving/Racking",
-                "Laszlo Hevesi": "Second Floor A",
-                "Inbound vacancy": "Third Floor",
-                "Zuzana Korpova": "Second Floor B",
-                "Marius Gutae": "First Floor",
-                "Cristina Zamfira": "Canteen"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Canteen",
-                "Hetal Bari": "Receiving/Racking",
-                "Dorota Szyca": "Ground Floor",
-                "Jagoda Ndreca": "HR Office",
-                "Laszlo Hevesi": "Yard/Car Park",
-                "Inbound vacancy": "Second Floor B",
-                "Zuzana Korpova": "First Floor",
-                "Marius Gutae": "Third Floor",
-                "Cristina Zamfira": "Second Floor A"
-            }
-        },
-        {
-            "timestamp": "2026-04-07 08:02:46",
-            "assignment": {
-                "Sharon Mckeown": "Ground Floor",
                 "Hetal Bari": "Canteen",
-                "Dorota Szyca": "Receiving/Racking",
-                "Jagoda Ndreca": "First Floor",
-                "Laszlo Hevesi": "Third Floor",
-                "Inbound vacancy": "HR Office",
-                "Zuzana Korpova": "Yard/Car Park",
+                "Dorota Szyca": "Yard/Car Park",
+                "Jagoda Ndreca": "Ground Floor",
+                "Laszlo Hevesi": "HR Office",
+                "Inbound vacancy": "Third Floor",
+                "Zuzana Korpova": "First Floor",
                 "Marius Gutae": "Second Floor A",
                 "Cristina Zamfira": "Second Floor B"
+            }
+        },
+        {
+            "timestamp": "2026-04-07 09:47:25",
+            "assignment": {
+                "shiron Mckeown": "Third Floor",
+                "Hetal Bari": "Ground Floor",
+                "Dorota Szyca": "First Floor",
+                "Jagoda Ndreca": "Second Floor A",
+                "Laszlo Hevesi": "Second Floor B",
+                "Inbound vacancy": "Canteen",
+                "Zuzana Korpova": "HR Office",
+                "Marius Gutae": "Yard/Car Park",
+                "Cristina Zamfira": "Receiving/Racking"
             }
         }
     ]
 }
-```
-
-### FILE: .\Rota\__init__.py
-```
-
-```
-
-### FILE: .\Rota\__main__.py
-```
-# TODO: Update the main function to your needs or remove it.
-
-
-def main() -> None:
-    print("Start coding in Python today!")
-
-
-if __name__ == "__main__":
-    main()
-
 ```
 
 ### FILE: .\tests\test_Rota.py
