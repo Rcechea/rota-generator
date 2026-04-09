@@ -1,0 +1,5 @@
+services:
+  app:
+    image: rota
+    ports:
+      - "8501:8501"
