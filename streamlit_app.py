@@ -3,6 +3,8 @@ import datetime
 import io
 import numpy as np
 import json
+import zipfile
+from io import BytesIO
 
 from core.history import load_history, save_history, update_history, clear_history
 from core.greedy import greedy_assign
@@ -26,20 +28,20 @@ st.title("📋 Rota Generator (Streamlit Version)")
 st.sidebar.header("People & Areas Editor")
 
 if "people_list" not in st.session_state:
-    st.session_state.people_list = ["Person 1", "Person 2", "Person 3"]
+    st.session_state.people_list = ["Person 1", "Person 2", "Person 3",
+                                    "Person 4", "Person 5", "Person 6"]
 
 if "areas_list" not in st.session_state:
-    st.session_state.areas_list = ["Area 1", "Area 2", "Area 3"]
+    st.session_state.areas_list = ["Area 1", "Area 2", "Area 3",
+                                   "Area 4", "Area 5", "Area 6"]
 
-# ✅ Ensure matrix exists and matches shape
+
 def ensure_matrix_matches_shape():
     people = st.session_state.people_list
     areas = st.session_state.areas_list
-
     rows = len(areas)
     cols = len(people)
 
-    # First time initialization
     if "allowed_matrix" not in st.session_state:
         st.session_state.allowed_matrix = np.ones((rows, cols), dtype=int).tolist()
         return
@@ -48,15 +50,11 @@ def ensure_matrix_matches_shape():
     old_rows = len(matrix)
     old_cols = len(matrix[0]) if old_rows else 0
 
-    # ✅ Matrix shape changed -> rebuild clean matrix
     if rows != old_rows or cols != old_cols:
         new_matrix = np.ones((rows, cols), dtype=int).tolist()
-
-        # ✅ Copy valid existing overlaps
         for r in range(min(rows, old_rows)):
             for c in range(min(cols, old_cols)):
                 new_matrix[r][c] = matrix[r][c]
-
         st.session_state.allowed_matrix = new_matrix
 
 
@@ -67,27 +65,17 @@ ensure_matrix_matches_shape()
 # ✅ PEOPLE & AREAS TEXT INPUT
 # =============================================================
 people_text = st.sidebar.text_area(
-    "People (one per line):",
-    value="\n".join(st.session_state.people_list)
+    "People (one per line):", value="\n".join(st.session_state.people_list)
 )
 
 areas_text = st.sidebar.text_area(
-    "Areas (one per line):",
-    value="\n".join(st.session_state.areas_list)
+    "Areas (one per line):", value="\n".join(st.session_state.areas_list)
 )
 
-
-# ✅ Save button
 if st.sidebar.button("Save People & Areas"):
-    st.session_state.people_list = [
-        p.strip() for p in people_text.split("\n") if p.strip()
-    ]
-    st.session_state.areas_list = [
-        a.strip() for a in areas_text.split("\n") if a.strip()
-    ]
-
+    st.session_state.people_list = [p.strip() for p in people_text.split("\n") if p.strip()]
+    st.session_state.areas_list = [a.strip() for a in areas_text.split("\n") if a.strip()]
     ensure_matrix_matches_shape()
-
     st.sidebar.success("✅ Saved people and areas!")
 
 
@@ -97,9 +85,7 @@ if st.sidebar.button("Save People & Areas"):
 st.sidebar.write("---")
 st.sidebar.subheader("Import / Export People & Areas & Matrix")
 
-upload_config = st.sidebar.file_uploader(
-    "Import JSON", type="json"
-)
+upload_config = st.sidebar.file_uploader("Import JSON", type="json")
 
 if upload_config is not None:
     data = json.load(upload_config)
@@ -116,11 +102,9 @@ if upload_config is not None:
             ).tolist()
 
         ensure_matrix_matches_shape()
-
         st.sidebar.success("✅ JSON imported successfully!")
     else:
         st.sidebar.error("❌ Invalid JSON (must include people & areas).")
-
 
 export_data = {
     "people": st.session_state.people_list,
@@ -147,13 +131,13 @@ matrix = st.session_state.allowed_matrix
 
 cols = st.columns(len(people) + 1)
 cols[0].write("**Area / Person**")
+
 for i, p in enumerate(people):
     cols[i + 1].write(f"**{p}**")
 
 for r, area in enumerate(areas):
     row = st.columns(len(people) + 1)
     row[0].write(area)
-
     for c, person in enumerate(people):
         key = f"matrix_{r}_{c}"
         checked = matrix[r][c] == 1
@@ -164,7 +148,7 @@ st.session_state.allowed_matrix = matrix
 
 
 # =============================================================
-# ✅ ROTATION GENERATION
+# ✅ ROTATION SETTINGS
 # =============================================================
 st.sidebar.write("---")
 st.sidebar.header("Generation Settings")
@@ -192,7 +176,7 @@ if clear_btn:
 
 
 # =============================================================
-# ✅ REGENERATE DEBUG FROM HISTORY
+# ✅ REGENERATE DEBUG FROM HISTORY — FIXED ZIP ORDER
 # =============================================================
 if regen_btn:
     history = load_history()
@@ -202,44 +186,57 @@ if regen_btn:
 
     st.write("## Debug Files From History")
 
+    # Build ZIP first
+    zip_buffer = BytesIO()
+    zipf = zipfile.ZipFile(zip_buffer, mode="w")
+
     assignments = []
     for m in history.get("months", []):
         mapping = m["assignment"]
         row = []
         for p in people:
             area = mapping.get(p)
-            if area in areas:
-                row.append(areas.index(area))
-            else:
-                row.append(None)
+            row.append(areas.index(area) if area in areas else None)
         assignments.append(row)
 
+    # Build all excel files into ZIP
     for i, asg in enumerate(assignments):
-        df, styled = build_debug_dataframe(
-            people, areas, allowed, asg, assignments[:i]
-        )
-
-        st.write(f"### Month {i+1}")
-        st.dataframe(styled, height=500)
-
         buf = io.BytesIO()
         export_debug_matrix(
-            buf, people, areas, allowed_matrix=allowed,
+            buf,
+            people,
+            areas,
+            allowed_matrix=allowed,
             assignment=asg,
             history_assignments=assignments[:i]
         )
         buf.seek(0)
+        zipf.writestr(f"debug_history_month_{i+1}.xlsx", buf.read())
 
-        st.download_button(
-            f"Download Month {i+1}",
-            buf,
-            f"debug_month_{i+1}.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    zipf.close()
+    zip_buffer.seek(0)
+
+    # ✅ ZIP download button ABOVE table output
+    st.download_button(
+        "⬇ Download ALL History Debug Files (ZIP)",
+        zip_buffer,
+        file_name="history_debug_all_months.zip",
+        mime="application/zip"
+    )
+
+    # ✅ NOW show the preview tables
+    for i, asg in enumerate(assignments):
+        df, styled = build_debug_dataframe(
+            people, areas, allowed, asg, assignments[:i]
         )
+        st.write(f"### Month {i+1}")
+        st.dataframe(styled, height=500)
+
+    st.success("✅ Debug regenerated!")
 
 
 # =============================================================
-# ✅ GENERATE NEW ROTA
+# ✅ GENERATE NEW ROTA — FIXED ZIP ORDER
 # =============================================================
 if run_btn:
     try:
@@ -247,25 +244,23 @@ if run_btn:
         areas = st.session_state.areas_list
         allowed = st.session_state.allowed_matrix
 
-        sick = [
-            s.strip()
-            for s in sick_people_input.replace("\n", ",").split(",")
-            if s.strip()
-        ]
+        sick = [s.strip() for s in sick_people_input.replace("\n", ",").split(",") if s.strip()]
 
         final_assignment = [None] * len(people)
 
         active_people = [p for p in people if p not in sick]
         active_idx = [people.index(p) for p in active_people]
 
-        filtered_matrix = [
-            [row[i] for i in active_idx] for row in allowed
-        ]
+        filtered_matrix = [[row[i] for i in active_idx] for row in allowed]
 
         history = load_history()
         current_assignment = [None] * len(active_people)
 
         st.write("## Debug Downloads")
+
+        # ZIP container
+        zip_buffer = BytesIO()
+        zipf = zipfile.ZipFile(zip_buffer, mode="w")
 
         for step in range(months_to_generate):
 
@@ -273,6 +268,7 @@ if run_btn:
                 filtered_matrix, active_people, areas, history
             )
 
+            # Solvers in order
             try:
                 assignment = solve_optimal(cost)
             except:
@@ -290,9 +286,11 @@ if run_btn:
                         current_assignment
                     )
 
+            # Map back to full list
             for j, real_idx in enumerate(active_idx):
                 final_assignment[real_idx] = assignment[j]
 
+            # Build excel output
             buf = io.BytesIO()
             export_debug_matrix(
                 buf, people, areas,
@@ -302,17 +300,23 @@ if run_btn:
             )
             buf.seek(0)
 
-            st.download_button(
-                f"Debug Month {step+1}",
-                buf,
-                f"rota_debug_{step+1}.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            zipf.writestr(f"rota_debug_month_{step+1}.xlsx", buf.read())
 
             update_history(history, final_assignment, people, areas)
             save_history(history)
 
             current_assignment = assignment
+
+        zipf.close()
+        zip_buffer.seek(0)
+
+        # ✅ Download button NOW — after zip is filled
+        st.download_button(
+            "⬇ Download ALL Generated Debug Files (ZIP)",
+            zip_buffer,
+            file_name="rota_debug_all_months.zip",
+            mime="application/zip"
+        )
 
         st.success("✅ Rota generation complete!")
 
