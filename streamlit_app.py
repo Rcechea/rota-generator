@@ -1,3 +1,6 @@
+#known problems: 
+# history does not auto regenerate if we add people
+# if you change people and areas then press save, it will sometimes not save the people
 import streamlit as st
 import datetime
 import io
